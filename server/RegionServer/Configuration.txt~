@@ -1,0 +1,7 @@
+frontend_server_ip = 127.0.0.1
+frontend_server_port = 1245
+
+region_server1_ip = 127.0.0.1
+region_server1_port = 1345
+region_server1_register_port = 1355
+region_server1_key = d2T2dfRFv02DG52

@@ -1,0 +1,9 @@
+class Message
+{
+public:
+	Message(arguments);
+	~Message();
+
+private:
+	int type;
+};

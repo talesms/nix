@@ -1,0 +1,6 @@
+compile:  
+	g++ -I/usr/include/python2.7 unwrap.cpp -o unwrap `pkg-config --libs opencv` -lvorbisenc -lvorbisfile -ltheoraenc -ltheoradec -ltheora -lvorbis -logg -fpermissive -lpython2.7
+
+	g++ client.c -o client
+clean:
+	rm unwrap callMSP.pyc
