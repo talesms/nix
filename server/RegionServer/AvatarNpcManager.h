@@ -4,6 +4,7 @@
 #include "../core/Subscriber.h"
 #include "../core/Message.h"
 #include "../core/MessageConfig.h"
+#include "../core/MessageDelivery.h"
 
 //TODO: Testando, retirar esse include
 #include <iostream>
@@ -17,22 +18,24 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 #define MAX_CONNECTIONS 9999
 
 class AvatarNpcManager : public Subscriber
 {
 public:
-	AvatarNpcManager();
+	AvatarNpcManager(MessageDelivery* messageDelivery);
 	~AvatarNpcManager();
 
-	void update(Message* message);
+	virtual void update(Message* message);
 
 private:
 	pthread_t* connections[MAX_CONNECTIONS]; //TODO: criar funcao hash para mapear o socket dentro do size
+	MessageDelivery* messageDelivery;
+
 
 	void newConnection(Message* message);
-	void debugMessage(Message* message); //TODO: testando, retirar
 };
 
 #endif

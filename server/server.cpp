@@ -3,13 +3,14 @@
 #include "core/BaseNet.h"
 #include "core/MessageDelivery.h"
 #include "core/Configuration.h"
+#include "core/Subscription.h"
 #include "Modules.h"
 
 #define NUM_MODULES 1
-#define SIZE_AUTORIZATION_KEY 15
+#define SIZE_AUTORIZATION_KEY 14
 
 
-void connectModules(Modules modules, BaseNet* baseNet)
+void connectModules(Modules* modules, BaseNet* baseNet)
 {
     int sock;
     int portno;
@@ -40,10 +41,10 @@ int main(int argc, char *argv[])
 
   connectModules(&modules, &baseNet);
 
-  MessageDelivery messageDelivery;
+  MessageDelivery messageDelivery(&baseNet);
 
-  Subscripton subModules(modules, REGION);
-  messageDelivery.subscribe(subModules);
+  Subscription subModules(&modules, REGION);
+  messageDelivery.subscribe(&subModules);
 
   baseNet.run(&messageDelivery);
 

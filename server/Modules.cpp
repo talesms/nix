@@ -2,7 +2,6 @@
 
 Modules::Modules()
 {
-
 }
 
 Modules::~Modules()
@@ -11,16 +10,16 @@ Modules::~Modules()
 
 void Modules::update(Message* message)
 {
+	int n;
 	switch(message->getDestination())
 	{
 		case REGION:
-		write(modulesSocks[REGION], message, sizeof(Message));
-		std::cout << "DEBUG enviando msg para region1" << std::endl;
+		n = write(modulesSocks[0], message, sizeof(Message));
 		break;
 	}
 }
 
-void Module::addModule(int sockModule)
+void Modules::addModule(int sockModule)
 {
-	modulesSocks->push_back(sock);
+	modulesSocks.push_back(sockModule);
 }

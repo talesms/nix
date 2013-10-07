@@ -12,12 +12,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include "Message.h"
 #include "MessageConfig.h"
 #include "MessageDelivery.h"
 
-#define SIZE_AUTORIZATION_KEY 15
+#define SIZE_AUTORIZATION_KEY 14
+
+class MessageDelivery; //Circular Dependency
 
 class BaseNet
 {
@@ -30,6 +33,7 @@ public:
 	int connectModule(int portno, const char* moduleHostname, char* authotizationKey);
 	int registerModule(int portno, const char* authotizationKey);
 	void setSock(int sock);
+	void sendToCentral(Message* message);
 
 private:
 	int sockfd;

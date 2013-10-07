@@ -1,7 +1,7 @@
 #include "MessageDelivery.h"
 
-MessageDelivery::MessageDelivery()
-//: baseNet(baseNet)
+MessageDelivery::MessageDelivery(BaseNet* baseNet)
+: baseNet(baseNet)
 {
 }
 
@@ -14,7 +14,12 @@ void MessageDelivery::deliverToModule(Message* message)
 	notifySubscribers(message);
 }
 
-/*void MessageDelivery::deliverToClient(Message* message)
+void MessageDelivery::deliverToClient(Message* message)
 {
 	baseNet->send(message);
-}*/
+}
+
+void MessageDelivery::deliverToCentral(Message* message)
+{
+	baseNet->sendToCentral(message);
+}

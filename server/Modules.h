@@ -2,12 +2,12 @@
 #define _NIX_MODULES
 
 #include <vector>
-#include <sys/types.h>
-#include <socket.h>
+#include <unistd.h>
 
 #include <iostream> //TODO: apagar, debug
 
-#include "/core/Subscriber.h"
+#include "core/Subscriber.h"
+#include "core/MessageConfig.h"
 
 class Modules : public Subscriber
 {

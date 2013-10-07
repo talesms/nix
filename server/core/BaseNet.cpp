@@ -1,20 +1,29 @@
 #include "BaseNet.h"
 
-#define PKG_SIZE 1024
+//#define PKG_SIZE 1024
 
-
-void BaseNet::send(Message* message)
+struct ModuleThreadParam
 {
 	int sock;
-	if (message != NULL)
-	{
-		sock = message->getClientSocket();
+	BaseNet* baseNet;
+};
 
-		if(write(sock, message + messageOffset, messageSize) <= 0)
+void *moduleThreadFunction(void* moduleThreadParam)
+{
+	int sock = ((ModuleThreadParam*)moduleThreadParam)->sock;
+	Message* msg = new Message(0,'0', '0', '0', 0);
+	int sizeMsg = sizeof(Message);
+	BaseNet* baseNet = ((ModuleThreadParam*)moduleThreadParam)->baseNet;
+
+	while(true)
+	{
+		if(recv(sock, (char*) msg, sizeMsg, 0) <= 0)
 		{
-			std::cout << "Client " << sock << " Disconnected." << std::endl;
-			close(sock);
+			std::cout << "ERROR module went offline" << std::endl;
+			return (void*) -1;
 		}
+
+		baseNet->send(msg);
 	}
 }
 
@@ -28,20 +37,60 @@ portno(portno)
 	messageSize = sizeof(Message) - messageOffset;
 }
 
+BaseNet::~BaseNet()
+{
+	close(newsockfd);
+    close(sockfd);
+}
+
+void BaseNet::send(Message* message)
+{
+	int sock;
+	if (message != NULL)
+	{
+		sock = message->getClientSocket();
+
+		//if(write(sock, message + messageOffset, messageSize) <= 0)
+		if(write(sock, "teste", 6) <= 0)
+		{
+			std::cout << "Client " << sock << " Disconnected." << std::endl;
+			close(sock);
+		}
+		else
+			std::cout << "SUCCESS sent test to client, sock" << sock << std::endl;
+	}
+}
+
+void BaseNet::sendToCentral(Message* message)
+{
+	int n;
+	n = write(sockfd, message, sizeof(Message));
+	std::cout << "DEBUG sent " << n << " to central, sock " << sockfd << std::endl;
+}
+
 void BaseNet::listenCentral(MessageDelivery* messageDelivery)
 {
 	int pkgSize = sizeof(Message);
 	char msg[sizeof(Message)];
+	Message* message = new Message(0,'0','0','0',0);
 	int n;
 
     std::cout << "WAITING messages from central." << std::endl;
 	while(true)
 	{
-		n = recv(sockfd, msg, pkgSize, 0);
+		n = recv(sockfd, &msg, pkgSize, 0);
+
+		message->setClientSocket(* reinterpret_cast<int *> (msg));
+		message->setDestination(msg[4]);
+		message->setOption(msg[5]);
+		message->setFunction(msg[6]);
+		message->setValue(* reinterpret_cast<int *> (&msg[8]));
+
 		if(n == pkgSize)
 		{
-			write(sockfd, "ok", 2);
-			messageDelivery->deliverToModule((Message*)msg);
+			std::cout << "SUCCESS message recived from central" << std::endl;
+			//write(sockfd, "ok", 2);
+			messageDelivery->deliverToModule(message);
 		}
 		else
 		{
@@ -55,9 +104,10 @@ void BaseNet::listenCentral(MessageDelivery* messageDelivery)
 void BaseNet::run(MessageDelivery* messageDelivery)
 {
 	Message* msg;
+	int sock;
 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if(sockfd < 0)
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock < 0)
 		std::cout << "ERROR opening socket." << std::endl;
 
 	bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -65,7 +115,7 @@ void BaseNet::run(MessageDelivery* messageDelivery)
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
 
-    if (bind(sockfd, (struct sockaddr *) &serv_addr,
+    if (bind(sock, (struct sockaddr *) &serv_addr,
     	sizeof(serv_addr)) < 0)
     	std::cout << "ERROR on binding. " << errno << std::endl;
 
@@ -73,9 +123,9 @@ void BaseNet::run(MessageDelivery* messageDelivery)
 
     while(true)
     {
-		listen(sockfd,100);
+		listen(sock,100);
 		clilen = sizeof(cli_addr);
-		newsockfd = accept(sockfd, 
+		newsockfd = accept(sock, 
 			(struct sockaddr *) &cli_addr, &clilen);
 
 		if (newsockfd < 0)
@@ -99,16 +149,19 @@ int BaseNet::connectModule(int portno, const char* moduleHostname, char* authoti
 {
 
 	struct hostent *moduleHostnameHostent;
+	int sockModule;
 	int n;
     int sum_n = 0;
     int len =0;
     struct sockaddr_in serv_addr;
     char buffer[SIZE_AUTORIZATION_KEY];
+    pthread_t* newThread;
+    ModuleThreadParam* moduleThreadParam;
 
     moduleHostnameHostent = gethostbyname(moduleHostname);
 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
+	sockModule = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockModule < 0)
     {
         std::cout << "ERROR opening socket" << std::endl;
         return -1;
@@ -129,19 +182,30 @@ int BaseNet::connectModule(int portno, const char* moduleHostname, char* authoti
 
     while(true)
     {
-	  if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+	  if (connect(sockModule,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
 	  {
-	    std::cout << "ERROR connecting" << std::endl;
+	    std::cout << "ERROR connecting module" << std::endl;
 	  }
 
-	  n = read(sockfd,buffer,SIZE_AUTORIZATION_KEY);
-	  write(sockfd, "Recebido", 9);
+	  n = read(sockModule, buffer, SIZE_AUTORIZATION_KEY);
+	  //write(sockModule, "ok", 2);
 
 	  if(!n)
 	    continue;
 
 	  if(checkKey(authotizationKey, buffer))
-	  	return sockfd;
+	  {
+	  	newThread = new pthread_t();
+	  	moduleThreadParam = (ModuleThreadParam*) malloc(sizeof(ModuleThreadParam));
+	  	moduleThreadParam->sock = sockModule;
+	  	moduleThreadParam->baseNet = this;
+
+
+	  	pthread_create(newThread, NULL, moduleThreadFunction, (void*) moduleThreadParam);
+
+	  	return sockModule;
+	  }
+	  	
 	}
 
    return 0;
@@ -153,12 +217,13 @@ int BaseNet::registerModule(int portno, const char* authotizationKey)
 	int newsock;
 	struct sockaddr_in serv_addr;
 	socklen_t clilen;
-	int n;
+	//int n;
 	char buffer[9];
+	int sock;
 
 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if(sockfd < 0)
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock < 0)
 		std::cout << "ERROR opening socket." << std::endl;
 
 	bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -166,7 +231,7 @@ int BaseNet::registerModule(int portno, const char* authotizationKey)
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
 
-    if (bind(sockfd, (struct sockaddr *) &serv_addr,
+    if (bind(sock, (struct sockaddr *) &serv_addr,
     	sizeof(serv_addr)) < 0)
     	std::cout << "ERROR on binding." << std::endl;
 
@@ -174,9 +239,9 @@ int BaseNet::registerModule(int portno, const char* authotizationKey)
 
     while(true)
     {
-		listen(sockfd,100);
+		listen(sock,100);
 		clilen = sizeof(cli_addr);
-		newsock = accept(sockfd, 
+		newsock = accept(sock, 
 			(struct sockaddr *) &cli_addr, &clilen);
 
 		if (newsock < 0)
@@ -189,13 +254,13 @@ int BaseNet::registerModule(int portno, const char* authotizationKey)
 		<< inet_ntoa(cli_addr.sin_addr) << " conectou." << std::endl;
 
 		write(newsock, authotizationKey, SIZE_AUTORIZATION_KEY);
-		n = read( newsock, buffer, 9);
+		//n = read(newsock, buffer, 2);
 
-		if(n>0)
-		{
+		//if(n>0)
+		//{
 			std::cout << "SUCCESS connected to central server" << std::endl;
 			return newsock;
-		}
+		//}
     }
 
     return 0;    
@@ -215,10 +280,4 @@ bool BaseNet::checkKey(char* originalKey, char* key)
 void BaseNet::setSock(int sock)
 {
 	sockfd = sock;
-}
-
-BaseNet::~BaseNet()
-{
-	close(newsockfd);
-    close(sockfd);
 }

@@ -8,19 +8,19 @@
 #include "AvatarNpcManager.h"
 
 
-void subcribeModules(RegionMessageDelivery* regionMessageDelivery)
+void subcribeModules(RegionMessageDelivery* regionMessageDelivery, MessageDelivery* messageDelivery)
 {
-	AvatarNpcManager anm;
+	AvatarNpcManager* anm = new AvatarNpcManager(messageDelivery);
 
-	Subscription subAnm(&anm, AVATAR_NPC_MANAGER);
+	Subscription* subAnm = new Subscription(anm, AVATAR_NPC_MANAGER);
 
-	regionMessageDelivery->subscribeModule(&subAnm);
+	regionMessageDelivery->subscribeModule(subAnm);
 }
 
 int main(int argc, char *argv[])
 {
   RegionMessageDelivery regionMessageDelivery;
-  MessageDelivery messageDelivery;
+  MessageDelivery* messageDelivery;
   int portno;
   int centralSock;
 
@@ -30,12 +30,14 @@ int main(int argc, char *argv[])
   centralSock = baseNet.registerModule(portno, Configuration::getConfig("region_server1_key").c_str());
   baseNet.setSock(centralSock);
 
-  subcribeModules(&regionMessageDelivery);
+  messageDelivery = new MessageDelivery(&baseNet);
+
+  subcribeModules(&regionMessageDelivery, messageDelivery);
 
   Subscription subRegionMessageDelivery(&regionMessageDelivery, REGION);
-  messageDelivery.subscribe(&subRegionMessageDelivery);
+  messageDelivery->subscribe(&subRegionMessageDelivery);
 
-  baseNet.listenCentral(&messageDelivery);
+  baseNet.listenCentral(messageDelivery);
 
   return 0;
 }

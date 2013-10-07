@@ -44,11 +44,11 @@ int main(int argc, char *argv[])
         error("ERROR connecting");
     while(true)
     {
-        n = read(sockfd,buffer,102400);
+        n = read(sockfd, buffer, 6);
 
         printf("Recebido %d \n", n);
 
-        write(sockfd, "Recebido", 9);
+        //write(sockfd, "teste", 6);
 
         if(!n)
           break;

@@ -27,7 +27,6 @@ void Publisher::unsubscribe(Subscription* subscription)
 
 void Publisher::notifySubscribers(Message* message)
 {
-	std::cout << "DEBUG notifySubscribers..." << std::endl;
 	for(int i = 0; i<subscriptions.size(); i++)
 	{
 		if(subscriptions[i]->getType() == message->getDestination())

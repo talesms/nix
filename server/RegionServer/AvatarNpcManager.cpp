@@ -1,12 +1,20 @@
 #include "AvatarNpcManager.h"
 
-void *clientThreadFunction(void* clienSock)
+
+struct ThreadParam
 {
-	int sock = (int) clienSock;
-	int sizeWrite;
-	int sizeRecv;
+	int sock;
+	MessageDelivery* messageDelivery;
+};
+
+void *clientThreadFunction(void* threadParam)
+{
+	int sock = ((struct ThreadParam*)threadParam)->sock;
 	char buffer[sizeof(Message)];
 	int pkgSize;
+	Message* message = new Message(sock, '1', '2', '3', 4);
+	MessageDelivery* messageDelivery;
+	messageDelivery = ((struct ThreadParam*)threadParam)->messageDelivery;
 
 	pkgSize = sizeof(Message);
 
@@ -14,21 +22,19 @@ void *clientThreadFunction(void* clienSock)
 	{
 		sleep(3);
 
-		sizeWrite = write(sock, "teste" , 6);
-		std::cout << "Enviado " << sizeWrite << " para "<< sock << "." << std::endl;
+		messageDelivery->deliverToCentral(message);
 
-		sizeRecv = recv(sock, buffer, pkgSize, 0);
-
-		if(sizeRecv <= 0)
-		{
-			std::cout << "Client " << sock << " Disconnected." << std::endl;
-			close(sock);
-			pthread_exit(0);
-		}
+		//if(sizeRecv <= 0)
+		//{
+		//	std::cout << "Client " << sock << " Disconnected." << std::endl;
+		//	close(sock);
+		//	pthread_exit(0);
+		//}
 	}
 }
 
-AvatarNpcManager::AvatarNpcManager()
+AvatarNpcManager::AvatarNpcManager(MessageDelivery* messageDelivery)
+: messageDelivery(messageDelivery)
 {
 }
 
@@ -46,25 +52,22 @@ void AvatarNpcManager::update(Message* message)
 	}
 }
 
-void AvatarNpcManager::debugMessage(Message* message)
-{
-	std::cout << "message->clientSocket: " << message->getClientSocket() << std::endl;
-	std::cout << "message->destination: " << message->getDestination() << std::endl;
-	std::cout << "message->function: " << message->getFunction() << std::endl;
-	std::cout << "message->value: " << message->getValue() << std::endl;
-}
-
 void AvatarNpcManager::newConnection(Message* message)
 {
 	pthread_t* newThread;
 	int sock;
+	struct ThreadParam* threadParam;
+	threadParam = (struct ThreadParam*) malloc(sizeof(struct ThreadParam));
 
 	newThread = new pthread_t();
 	sock = message->getClientSocket();
 
-	connections[message->getClientSocket()] = newThread;
+	connections[sock] = newThread;
+
+	threadParam->sock = sock;
+	threadParam->messageDelivery = messageDelivery;
 
 	std::cout << "SUCCESS a player has connected, sock: "<<  sock << std::endl;
 
-	pthread_create(newThread, NULL, clientThreadFunction, (void*) sock);
+	pthread_create(newThread, NULL, clientThreadFunction, (void*) threadParam);
 }
