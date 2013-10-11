@@ -22,6 +22,24 @@
 
 #define MAX_CONNECTIONS 9999
 
+struct AvatarInfo
+{
+	int maxHp;
+	int hp;
+	int maxMana;
+	int mana;
+
+	int posX;
+	int posY;
+	int posZ;
+
+	int rotX;
+	int rotY;
+	int rotZ;
+
+	int vel;
+};
+
 class AvatarNpcManager : public Subscriber
 {
 public:
@@ -32,7 +50,9 @@ public:
 
 private:
 	pthread_t* connections[MAX_CONNECTIONS]; //TODO: criar funcao hash para mapear o socket dentro do size
+	AvatarInfo* avatarInfo[MAX_CONNECTIONS];
 	MessageDelivery* messageDelivery;
+
 
 
 	void newConnection(Message* message);

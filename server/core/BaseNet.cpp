@@ -65,7 +65,6 @@ void BaseNet::sendToCentral(Message* message)
 {
 	int n;
 	n = write(sockfd, message, sizeof(Message));
-	std::cout << "DEBUG sent " << n << " to central, sock " << sockfd << std::endl;
 }
 
 void BaseNet::listenCentral(MessageDelivery* messageDelivery)
