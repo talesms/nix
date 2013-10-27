@@ -80,7 +80,7 @@ bool DataBase::saveCharacter(Avatar* avatar)
 {
 	sprintf(saveQuery, "UPDATE `nix`.`avatar` SET `level`=%d, `maxhp`='%d', `hp`='%d', `maxmana`='%d', `mana`='%d', `positionx`=%d, `positiony`=%d, `positionz`=%d, `rotationx`=%d, `rotationy`=%d, `rotationz`=%d WHERE `idavatar`='%d'", avatar->level, avatar->maxhp, avatar->hp, avatar->maxmana, avatar->mana, avatar->positionx, avatar->positiony, avatar->positionz, avatar->rotationx, avatar->rotationy, avatar->rotationz, avatar->idavatar);
 
-	mysqlpp::Query query = conn->query(saveQuery);
+	mysqlpp::Query query = conn->query(cStrQuery);
 	query.store();
 
 	

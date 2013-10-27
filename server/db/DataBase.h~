@@ -18,7 +18,6 @@ public:
 	bool saveCharacter(Avatar* avatar);
 
 private:
-	char* saveQuery;
 	mysqlpp::Connection *conn;
 	mysqlpp::StoreQueryResult::const_iterator it;
 

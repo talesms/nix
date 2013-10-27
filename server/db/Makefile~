@@ -1,5 +1,5 @@
 compile:
-	g++ db.cpp DataBase.h DataBase.cpp ../core/Configuration.h ../core/Configuration.cpp -L/user/lib -lmysqlpp -I/usr/include/mysql -I/usr/include/mysql++ -o db
+	g++ db.cpp DataBase.h DataBase.cpp ../core/Configuration.h ../core/Configuration.cpp -L/user/lib -lmysqlpp -I/usr/include/mysql -I/usr/include/mysql++ -MMD -MP -MF -o db
 
 clean:
 	rm db
