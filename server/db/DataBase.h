@@ -1,3 +1,6 @@
+#ifndef _NIX_DATABASE
+#define _NIX_DATABASE
+
 #include "../core/Avatar.h"
 #include "../core/Configuration.h"
 
@@ -23,3 +26,5 @@ private:
 	mysqlpp::StoreQueryResult::const_iterator it;
 
 };
+
+#endif

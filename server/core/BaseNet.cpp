@@ -14,6 +14,7 @@ void *moduleThreadFunction(void* moduleThreadParam)
 	Message* msg = new Message(0,'0', '0', '0', 0);
 	int sizeMsg = sizeof(Message);
 	BaseNet* baseNet = ((ModuleThreadParam*)moduleThreadParam)->baseNet;
+	delete ((ModuleThreadParam*)moduleThreadParam);
 
 	while(true)
 	{
@@ -216,7 +217,6 @@ int BaseNet::registerModule(int portno, const char* authotizationKey)
 	int newsock;
 	struct sockaddr_in serv_addr;
 	socklen_t clilen;
-	//int n;
 	char buffer[9];
 	int sock;
 
@@ -253,13 +253,9 @@ int BaseNet::registerModule(int portno, const char* authotizationKey)
 		<< inet_ntoa(cli_addr.sin_addr) << " conectou." << std::endl;
 
 		write(newsock, authotizationKey, SIZE_AUTORIZATION_KEY);
-		//n = read(newsock, buffer, 2);
 
-		//if(n>0)
-		//{
-			std::cout << "SUCCESS connected to central server" << std::endl;
-			return newsock;
-		//}
+		std::cout << "SUCCESS connected to central server" << std::endl;
+		return newsock;
     }
 
     return 0;    

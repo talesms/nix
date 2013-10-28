@@ -1,5 +1,9 @@
-db_url = tcp://127.0.0.1:3306
+db_ip = 127.0.0.1
+db_port = 3306
 db_user = root
 db_password = rootpassword
+
+cache_manager_port = 1445
+
 
 

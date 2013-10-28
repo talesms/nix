@@ -5,7 +5,7 @@ struct ThreadParam
 {
 	int sock;
 	MessageDelivery* messageDelivery;
-	AvatarInfo* info;
+	//AvatarInfo* info;
 };
 
 void *clientThreadFunction(void* threadParam)
@@ -15,7 +15,7 @@ void *clientThreadFunction(void* threadParam)
 	int pkgSize;
 	Message* message = new Message(sock, '0', '0', '0', 1);
 	MessageDelivery* messageDelivery;
-	AvatarInfo* localAvatarInfo = ((struct ThreadParam*)threadParam)->info;
+	//AvatarInfo* localAvatarInfo = ((struct ThreadParam*)threadParam)->info;
 
 
 	messageDelivery = ((struct ThreadParam*)threadParam)->messageDelivery;
@@ -24,7 +24,7 @@ void *clientThreadFunction(void* threadParam)
 
 	pkgSize = sizeof(Message);
 
-	localAvatarInfo->maxHp = 100;
+	/*localAvatarInfo->maxHp = 100;
 	localAvatarInfo->hp = 100;
 	localAvatarInfo->maxMana = 100;
 	localAvatarInfo->mana = 100;
@@ -37,7 +37,7 @@ void *clientThreadFunction(void* threadParam)
 	localAvatarInfo->rotY = 0;
 	localAvatarInfo->rotZ = 0;
 
-	localAvatarInfo->vel = 10;
+	localAvatarInfo->vel = 10;*/
 
 	while(true)
 	{
@@ -87,11 +87,11 @@ void AvatarNpcManager::newConnection(Message* message)
 
 	connections[sock] = newThread;
 
-	avatarInfo[sock] = (struct AvatarInfo*) malloc(sizeof(struct AvatarInfo));
+	//avatarInfo[sock] = (struct AvatarInfo*) malloc(sizeof(struct AvatarInfo));
 
 	threadParam->sock = sock;
 	threadParam->messageDelivery = messageDelivery;
-	threadParam->info = avatarInfo[sock];
+	//threadParam->info = avatarInfo[sock];
 
 	std::cout << "SUCCESS a player has connected, sock: "<<  sock << std::endl;
 

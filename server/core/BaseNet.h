@@ -40,7 +40,8 @@ private:
 	int newsockfd;
 	int portno;
 	socklen_t clilen;
-	struct sockaddr_in serv_addr, cli_addr;
+	struct sockaddr_in serv_addr;
+	struct sockaddr_in cli_addr;
 	char messageOffset;
 	int messageSize;
 

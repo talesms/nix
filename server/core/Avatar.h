@@ -1,3 +1,6 @@
+#ifndef _NIX_AVATAR
+#define _NIX_AVATAR
+
 #include <string>
 #include <cstring>
 
@@ -18,3 +21,5 @@ typedef struct _Avatar
 	int rotationy;
 	int rotationz;
 } Avatar;
+
+#endif

@@ -3,4 +3,7 @@ db_port = 3306
 db_user = root
 db_password = rootpassword
 
+cache_manager_port = 1445
+cache_manager_key = 5SD1fsKbh5hll1m
+
 
