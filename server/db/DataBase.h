@@ -2,6 +2,8 @@
 #define _NIX_DATABASE
 
 #include "../core/Avatar.h"
+#include "../core/Item.h"
+#include "../core/Skill.h"
 #include "../core/Configuration.h"
 
 #include <mysql++.h>
@@ -18,6 +20,8 @@ public:
 
 	int login(string user, string password);
 	vector<Avatar*>* getCharacterList(int userid);
+	vector<Item*>* getItemList();
+	vector<Skill*>* getSkillList();
 	bool saveCharacter(Avatar* avatar);
 
 private:

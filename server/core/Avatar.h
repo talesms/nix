@@ -1,14 +1,14 @@
 #ifndef _NIX_AVATAR
 #define _NIX_AVATAR
 
-#include <string>
-#include <cstring>
 
 typedef struct _Avatar
 {
 	int idavatar;
-	char* name;
+	char name[12];
 	int level;
+	int race;
+	int classNum;
 	char sex;
 	int maxhp;
 	int hp;

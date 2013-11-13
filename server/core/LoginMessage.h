@@ -4,14 +4,12 @@
 class LoginMessage
 {
 public:
-	LoginMessage(clientSocket, char* user, char* pass);
+	LoginMessage(char* user, char* pass);
 	~LoginMessage();
 
-	int getClientSocket();
 	char* getUsername();
 	char* getPassword();
 private:
-	int clientSocket;
 	char username[30];
 	char password[30];
 };

@@ -6,4 +6,7 @@ db_password = rootpassword
 cache_manager_port = 1445
 cache_manager_key = 5SD1fsKbh5hll1m
 
+cache_manager_cached_port = 1446
+
+
 

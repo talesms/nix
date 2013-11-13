@@ -1,7 +1,6 @@
 #include "LoginMessage.h"
 
-LoginMessage::LoginMessage(int clientSocket, char* user, char* pass)
-: clientSocket(clientSocket)
+LoginMessage::LoginMessage(char* user, char* pass)
 {
 	int i;
 	for(i=0; user[i] != '\0'; ++i)
@@ -19,11 +18,6 @@ LoginMessage::LoginMessage(int clientSocket, char* user, char* pass)
 LoginMessage::~LoginMessage()
 {
 
-}
-
-int LoginMessage::getClientSocket()
-{
-	return clientSocket;
 }
 
 char* LoginMessage::getUsername()

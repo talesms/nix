@@ -3,14 +3,16 @@
 
 #include "Avatar.h"
 
+#include <stdlib.h>
+
 class CharacterListMessage
 {
 public:
-	CharacterListMessage(Avatar* list, int listSize);
+	CharacterListMessage(Avatar* list, char listSize);
 	~CharacterListMessage();
 
 	int getClientSocket();
-	Avatar getCharacter(int index);
+	Avatar getCharacter(char index);
 	Avatar* getCharacterList();
 
 private:

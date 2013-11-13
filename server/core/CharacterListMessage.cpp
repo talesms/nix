@@ -1,14 +1,19 @@
 #include "CharacterListMessage.h"
 
-CharacterListMessage::CharacterListMessage(Avatar* list, int listSize)
+CharacterListMessage::CharacterListMessage(Avatar* list, char listSize)
 {
-	int i;
+	char i;
+
+	char* nullChar = (char*) malloc(sizeof(char));
+	*nullChar = '\0';
 
 	Avatar nullAvatar;
-	nullAvatar.idAvatar = 0;
-	nullAvatar.name = " ";
+	nullAvatar.idavatar = 0;
+	nullAvatar.name[0] = *nullChar;
 	nullAvatar.level = 0;
-	nullAvatar.sex = " ";
+	nullAvatar.race = 0;
+	nullAvatar.classNum = 0;
+	nullAvatar.sex = *nullChar;
 	nullAvatar.maxhp = 0;
 	nullAvatar.hp = 0;
 	nullAvatar.maxmana = 0;
@@ -37,12 +42,12 @@ int CharacterListMessage::getClientSocket()
 	return clientSocket;
 }
 
-Avatar CharacterListMessage::getCharacter(int index)
+Avatar CharacterListMessage::getCharacter(char index)
 {
 	return characterList[index];
 }
 
-Avatar* CharacterListMessage::getCharacter()
+Avatar* CharacterListMessage::getCharacterList()
 {
 	return characterList;
 }
