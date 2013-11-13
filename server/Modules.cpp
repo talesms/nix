@@ -13,7 +13,7 @@ void Modules::update(Message* message)
 	int n;
 	switch(message->getDestination())
 	{
-		case REGION:
+		case MESSAGE_DESTINATION_REGION:
 		n = write(modulesSocks[0], message, sizeof(Message));
 		break;
 	}

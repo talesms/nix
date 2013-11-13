@@ -137,7 +137,7 @@ void BaseNet::run(MessageDelivery* messageDelivery)
 		std::cout << "Client " << newsockfd << " IP: "
 		<< inet_ntoa(cli_addr.sin_addr) << " conectou." << std::endl;
 
-		msg = new Message(newsockfd, REGION, AVATAR_NPC_MANAGER, NEW_CONNECTION, 0);
+		msg = new Message(newsockfd, MESSAGE_DESTINATION_REGION, MESSAGE_OPTIONS_REGION_AVATAR_NPC_MANAGER, MESSAGE_FUNCTION_AVATARNPCMANAGER_NEW_CONNECTION, 0);
 
 		messageDelivery->deliverToModule(msg);
     }

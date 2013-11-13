@@ -1,6 +1,7 @@
 #ifndef _NIX_AVATARNPCMANAGER
 #define _NIX_AVATARNPCMANAGER
 
+#include "../core/Configuration.h"
 #include "../core/Subscriber.h"
 #include "../core/Message.h"
 #include "../core/MessageConfig.h"
@@ -29,14 +30,14 @@ public:
 	AvatarNpcManager(MessageDelivery* messageDelivery);
 	~AvatarNpcManager();
 
+	void connectToCacheServer();
 	virtual void update(Message* message);
 
 private:
 	pthread_t* connections[MAX_CONNECTIONS]; //TODO: criar funcao hash para mapear o socket dentro do size
 	//AvatarInfo* avatarInfo[MAX_CONNECTIONS];
 	MessageDelivery* messageDelivery;
-
-
+	int cacheSock;
 
 	void newConnection(Message* message);
 };

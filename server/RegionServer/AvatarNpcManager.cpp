@@ -5,6 +5,7 @@ struct ThreadParam
 {
 	int sock;
 	MessageDelivery* messageDelivery;
+	int cacheSock;
 	//AvatarInfo* info;
 };
 
@@ -23,6 +24,11 @@ void *clientThreadFunction(void* threadParam)
 	delete ((struct ThreadParam*) threadParam);
 
 	pkgSize = sizeof(Message);
+
+	//if(!messageDelivery->loginStep(sock))
+	//	return;
+
+	//messageDelivery->characterListStep(sock);
 
 	/*localAvatarInfo->maxHp = 100;
 	localAvatarInfo->hp = 100;
@@ -59,17 +65,45 @@ void *clientThreadFunction(void* threadParam)
 AvatarNpcManager::AvatarNpcManager(MessageDelivery* messageDelivery)
 : messageDelivery(messageDelivery)
 {
+	connectToCacheServer();
 }
 
 AvatarNpcManager::~AvatarNpcManager()
 {
 }
 
+void AvatarNpcManager::connectToCacheServer()
+{
+	int portno;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+    portno = atoi(Configuration::getConfig("cache_manager_port").c_str());
+    cacheSock = socket(AF_INET, SOCK_STREAM, 0);
+    if (cacheSock < 0)
+        std::cout << "ERROR opening socket to connect with cache server" << std::endl;
+    server = gethostbyname(Configuration::getConfig("cache_manager_ip").c_str());
+    if (server == NULL) {
+        std::cout << "ERROR, no such host to connect with cache server" << std::endl;
+        return;
+    }
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr,
+         (char *)&serv_addr.sin_addr.s_addr,
+         server->h_length);
+    serv_addr.sin_port = htons(portno);
+    if (connect(cacheSock,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+         std::cout << "ERROR connecting with cache server" << std::endl;
+    else
+    	std::cout << "SUCCESS connected to cache server" << std::endl;
+}
+
 void AvatarNpcManager::update(Message* message)
 {
 	switch(message->getFunction())
 	{
-		case NEW_CONNECTION:
+		case MESSAGE_FUNCTION_AVATARNPCMANAGER_NEW_CONNECTION:
 		newConnection(message);
 		break;
 	}

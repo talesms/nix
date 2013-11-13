@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
   MessageDelivery messageDelivery(&baseNet);
 
-  Subscription subModules(&modules, REGION);
+  Subscription subModules(&modules, MESSAGE_DESTINATION_REGION);
   messageDelivery.subscribe(&subModules);
 
   baseNet.run(&messageDelivery);

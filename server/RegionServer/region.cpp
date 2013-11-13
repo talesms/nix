@@ -12,7 +12,7 @@ void subcribeModules(RegionMessageDelivery* regionMessageDelivery, MessageDelive
 {
 	AvatarNpcManager* anm = new AvatarNpcManager(messageDelivery);
 
-	Subscription* subAnm = new Subscription(anm, AVATAR_NPC_MANAGER);
+	Subscription* subAnm = new Subscription(anm, MESSAGE_OPTIONS_REGION_AVATAR_NPC_MANAGER);
 
 	regionMessageDelivery->subscribeModule(subAnm);
 }
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
   subcribeModules(&regionMessageDelivery, messageDelivery);
 
-  Subscription subRegionMessageDelivery(&regionMessageDelivery, REGION);
+  Subscription subRegionMessageDelivery(&regionMessageDelivery, MESSAGE_DESTINATION_REGION);
   messageDelivery->subscribe(&subRegionMessageDelivery);
 
   baseNet.listenCentral(messageDelivery);
