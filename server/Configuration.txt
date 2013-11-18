@@ -1,6 +1,12 @@
 frontend_server_ip = 127.0.0.1
 frontend_server_port = 1245
+frontend_server_request_port = 1246
+frontend_server_request_key = mhJk8gHanJH332y
 
 region_server1_ip = 127.0.0.1
 region_server1_port = 1345
 region_server1_key = d2T2dfRFv02DG52
+
+login_server_ip = 127.0.0.1
+login_server_port = 1545
+login_server_key = jnC00hjcHaABGxS

@@ -10,11 +10,13 @@ Modules::~Modules()
 
 void Modules::update(Message* message)
 {
-	int n;
 	switch(message->getDestination())
 	{
+		case MESSAGE_DESTINATION_LOGIN:
+			write(modulesSocks[0], message, sizeof(Message));
+		break;
 		case MESSAGE_DESTINATION_REGION:
-		n = write(modulesSocks[0], message, sizeof(Message));
+			write(modulesSocks[1], message, sizeof(Message));
 		break;
 	}
 }

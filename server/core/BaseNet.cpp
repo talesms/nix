@@ -1,6 +1,7 @@
 #include "BaseNet.h"
 
-//#define PKG_SIZE 1024
+
+bool checkKey(char* originalKey, char* key);
 
 struct ModuleThreadParam
 {
@@ -38,6 +39,20 @@ portno(portno)
 	messageSize = sizeof(Message) - messageOffset;
 }
 
+void BaseNet::setRequestListener(int port, const char* key)
+{
+	int i;
+
+	requestListenerPort = port;
+	if(requestListenerPort < 1 || requestListenerPort > 65535)
+		std::cout << "ERROR invalid requestListenerPort." << std::endl;
+
+	for(i=0; i<SIZE_AUTORIZATION_KEY; ++i)
+	{
+		requestKey[i] = key[i];
+	}
+}
+
 BaseNet::~BaseNet()
 {
 	close(newsockfd);
@@ -64,8 +79,38 @@ void BaseNet::send(Message* message)
 
 void BaseNet::sendToCentral(Message* message)
 {
-	int n;
-	n = write(sockfd, message, sizeof(Message));
+	write(sockfd, message, sizeof(Message));
+}
+
+int BaseNet::initRequestToCentral(Message* message, const char* hostname, int portno, const char* key)
+{
+    int requestSocket, n, sum_n = 0, len =0, i;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+    requestSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (requestSocket < 0)
+        std::cout << "ERROR opening socket at initRequestToCentral." << std::endl;
+    server = gethostbyname(hostname);
+    if (server == NULL) {
+        std::cout << "ERROR, no such host at initRequestToCentral." << std::endl;
+        return 0;
+    }
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr,
+         (char *)&serv_addr.sin_addr.s_addr,
+         server->h_length);
+    serv_addr.sin_port = htons(portno);
+
+    if (connect(requestSocket,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+        std::cout << "ERROR connecting at initRequestToCentral." << std::endl;
+
+    write(requestSocket, key, SIZE_AUTORIZATION_KEY);
+
+	write(requestSocket, message, sizeof(Message));
+
+	return requestSocket;
 }
 
 void BaseNet::listenCentral(MessageDelivery* messageDelivery)
@@ -101,10 +146,123 @@ void BaseNet::listenCentral(MessageDelivery* messageDelivery)
 	}
 }
 
+void* requestThreadFunction(void* param)
+{
+	int sock;
+	Message *msg;
+	char loginBuffer[60];
+	Avatar avatarBuffer[10];
+	int avatarNumberChosen;
+
+	sock = (int) param;
+
+	msg = new Message(0, 0, 0, 0, 0);
+	std::cout << "DEBUG 0 requestThreadFunction" << std::endl;
+	recv(sock, msg, sizeof(Message), 0);
+	std::cout << "DEBUG 1 requestThreadFunction" << std::endl;
+	if(msg->getDestination() == MESSAGE_DESTINATION_CENTRAL)
+	{
+		switch(msg->getOption())
+		{
+			case MESSAGE_OPTIONS_CENTRAL_LOGIN:
+				std::cout << "DEBUG 2 requestThreadFunction" << std::endl;
+				recv(msg->getClientSocket(), loginBuffer, sizeof(char)*60, 0);
+					std::cout << "DEBUG 3 requestThreadFunction" << std::endl;
+				write(sock, loginBuffer, sizeof(char)*60);
+					std::cout << "DEBUG 4 requestThreadFunction" << std::endl;
+			break;
+			case MESSAGE_OPTIONS_CENTRAL_CHARACTERLIST:
+				recv(sock, avatarBuffer, sizeof(Avatar)*10, 0);
+				write(msg->getClientSocket(), avatarBuffer, sizeof(Avatar)*10);
+				recv(msg->getClientSocket(), &avatarNumberChosen, sizeof(int), 0);
+				write(sock, &avatarNumberChosen, sizeof(int));
+			break;
+		}
+	}
+}
+
+struct RequestListenerParam
+{
+	int portno;
+	char* requestKey;
+	bool (* checkKey)(char* originalKey, char* key);
+};
+
+void* requestListenerThreadFunction(void* param)
+{
+	int sock;
+	int newsock;
+	int n;
+	int portno;
+	socklen_t clilen;
+	struct sockaddr_in serv_addr;
+	struct sockaddr_in cli_addr;
+	pthread_t* newThread;
+	char buffer[SIZE_AUTORIZATION_KEY];
+
+	portno = ((RequestListenerParam*)param)->portno;
+
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock < 0)
+		std::cout << "ERROR opening socket at request listener thread." << std::endl;
+
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	serv_addr.sin_port = htons(portno);
+
+    if (bind(sock, (struct sockaddr *) &serv_addr,
+    	sizeof(serv_addr)) < 0)
+    	std::cout << "ERROR on binding at request listener thread." << errno << std::endl;
+
+    std::cout << "WAITING Messages at request listener thread..." << std::endl;
+
+    while(true)
+	{
+		listen(sock,100);
+		clilen = sizeof(cli_addr);
+		newsock = accept(sock, 
+			(struct sockaddr *) &cli_addr, &clilen);
+	std::cout << "DEBUG 0 requestListenerThreadFunction" << std::endl;
+		if (newsock < 0)
+		{
+			std::cout << "ERROR on accept at request listener thread." << std::endl;
+			continue;
+		}
+	std::cout << "DEBUG 1 requestListenerThreadFunction" << std::endl;
+		n = recv(newsock, buffer, SIZE_AUTORIZATION_KEY, 0);
+			std::cout << "DEBUG 1 request thread creator" << std::endl;
+	std::cout << "DEBUG 2 requestListenerThreadFunction" << std::endl;
+	  	if(!n)
+	    	continue;
+	std::cout << "DEBUG 3 requestListenerThreadFunction, originalkey: " << ((RequestListenerParam*)param)->requestKey << "buffer key: " << buffer << std::endl;
+		if(((RequestListenerParam*)param)->checkKey(((RequestListenerParam*)param)->requestKey, buffer))
+		{
+			newThread = new pthread_t();
+
+	std::cout << "DEBUG 4 requestListenerThreadFunction" << std::endl;
+	  		pthread_create(newThread, NULL, requestThreadFunction, (void*) newsock);
+	  	}
+	}
+	delete ((RequestListenerParam*)param);
+}
+
 void BaseNet::run(MessageDelivery* messageDelivery)
 {
 	Message* msg;
 	int sock;
+	pthread_t* requestListenerThread;
+	RequestListenerParam* requestListenerParam;
+
+ 	requestListenerThread = new pthread_t();
+
+ 	requestListenerParam = (RequestListenerParam*) malloc(sizeof(RequestListenerParam));
+ 	requestListenerParam->portno = requestListenerPort;
+ 	requestListenerParam->checkKey = checkKey;
+ 	requestListenerParam->requestKey = requestKey;
+
+ 	pthread_create(requestListenerThread, NULL, requestListenerThreadFunction, requestListenerParam);
+
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if(sock < 0)
@@ -137,7 +295,8 @@ void BaseNet::run(MessageDelivery* messageDelivery)
 		std::cout << "Client " << newsockfd << " IP: "
 		<< inet_ntoa(cli_addr.sin_addr) << " conectou." << std::endl;
 
-		msg = new Message(newsockfd, MESSAGE_DESTINATION_REGION, MESSAGE_OPTIONS_REGION_AVATAR_NPC_MANAGER, MESSAGE_FUNCTION_AVATARNPCMANAGER_NEW_CONNECTION, 0);
+		//msg = new Message(newsockfd, MESSAGE_DESTINATION_REGION, MESSAGE_OPTIONS_REGION_AVATAR_NPC_MANAGER, MESSAGE_FUNCTION_AVATARNPCMANAGER_NEW_CONNECTION, 0);
+		msg = new Message(newsockfd, MESSAGE_DESTINATION_LOGIN, 0, 0, 0);
 
 		messageDelivery->deliverToModule(msg);
     }
@@ -145,7 +304,7 @@ void BaseNet::run(MessageDelivery* messageDelivery)
     std::cout << "SERVER SHUTDOWN" << std::endl;
 }
 
-int BaseNet::connectModule(int portno, const char* moduleHostname, char* authotizationKey)
+int BaseNet::connectModule(int portno, const char* moduleHostname, char* authorizationKey)
 {
 
 	struct hostent *moduleHostnameHostent;
@@ -193,7 +352,7 @@ int BaseNet::connectModule(int portno, const char* moduleHostname, char* authoti
 	  if(!n)
 	    continue;
 
-	  if(checkKey(authotizationKey, buffer))
+	  if(checkKey(authorizationKey, buffer))
 	  {
 	  	newThread = new pthread_t();
 	  	moduleThreadParam = (ModuleThreadParam*) malloc(sizeof(ModuleThreadParam));
@@ -211,7 +370,7 @@ int BaseNet::connectModule(int portno, const char* moduleHostname, char* authoti
    return 0;
 }
 
-int BaseNet::registerModule(int portno, const char* authotizationKey)
+int BaseNet::registerModule(int portno, const char* authorizationKey)
 {
 	Message* msg;
 	int newsock;
@@ -252,7 +411,7 @@ int BaseNet::registerModule(int portno, const char* authotizationKey)
 		std::cout << "SUCCESS central server IP: "
 		<< inet_ntoa(cli_addr.sin_addr) << " conectou." << std::endl;
 
-		write(newsock, authotizationKey, SIZE_AUTORIZATION_KEY);
+		write(newsock, authorizationKey, SIZE_AUTORIZATION_KEY);
 
 		std::cout << "SUCCESS connected to central server" << std::endl;
 		return newsock;
@@ -261,7 +420,7 @@ int BaseNet::registerModule(int portno, const char* authotizationKey)
     return 0;    
 }
 
-bool BaseNet::checkKey(char* originalKey, char* key)
+bool checkKey(char* originalKey, char* key)
 {
 	for(int i=0; i<SIZE_AUTORIZATION_KEY; i++)
 	{
@@ -275,4 +434,24 @@ bool BaseNet::checkKey(char* originalKey, char* key)
 void BaseNet::setSock(int sock)
 {
 	sockfd = sock;
+}
+
+LoginMessage* BaseNet::requestCentraltoLoginClient(int requestSocket)
+{
+	char buff[60];
+
+	std::cout << "DEBUG 0 requestCentraltoLoginClient" << std::endl;
+	recv(requestSocket, buff, sizeof(char)*60, 0);
+	std::cout << "DEBUG 1 requestCentraltoLoginClient" << std::endl;
+	return new LoginMessage(buff, buff+30);
+}
+
+char BaseNet::requestCentralToSendCharacterList(Avatar* avatarList, int requestSocket)
+{
+	char avatarNumberChosen;
+
+	write(requestSocket, avatarList, sizeof(Avatar)*10);
+	recv(requestSocket, &avatarNumberChosen, sizeof(char), 0);
+
+	return avatarNumberChosen;
 }

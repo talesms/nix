@@ -17,6 +17,9 @@
 #include "Message.h"
 #include "MessageConfig.h"
 #include "MessageDelivery.h"
+#include "LoginMessage.h"
+#include "CharacterListMessage.h"
+#include "Avatar.h"
 
 #define SIZE_AUTORIZATION_KEY 14
 
@@ -30,10 +33,15 @@ public:
 	void run(MessageDelivery* messageDelivery);
 	void listenCentral(MessageDelivery* messageDelivery);
 	void send(Message* message);
-	int connectModule(int portno, const char* moduleHostname, char* authotizationKey);
-	int registerModule(int portno, const char* authotizationKey);
+	int connectModule(int portno, const char* moduleHostname, char* authorizationKey);
+	int registerModule(int portno, const char* authorizationKey);
 	void setSock(int sock);
 	void sendToCentral(Message* message);
+	int initRequestToCentral(Message* message, const char* hostname, int portno, const char* key);
+	LoginMessage* requestCentraltoLoginClient(int requestSocket);
+	char requestCentralToSendCharacterList(Avatar* avatarList, int requestSocket);
+	void setRequestListener(int port, const char* key);
+
 
 private:
 	int sockfd;
@@ -44,8 +52,8 @@ private:
 	struct sockaddr_in cli_addr;
 	char messageOffset;
 	int messageSize;
-
-	bool checkKey(char* originalKey, char* key);
+	int requestListenerPort;
+	char requestKey[SIZE_AUTORIZATION_KEY];
 };
 
 #endif

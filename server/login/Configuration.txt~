@@ -1,0 +1,15 @@
+frontend_server_ip = 127.0.0.1
+frontend_server_request_port = 1246
+
+login_server_ip = 127.0.0.1
+login_server_port = 1545
+login_server_key = jnC00hjcHaABGxS
+
+cache_manager_ip = 127.0.0.1
+cache_manager_port = 1445
+cache_manager_key = 5SD1fsKbh5hll1m
+
+cache_manager_cached_port = 1446
+
+
+

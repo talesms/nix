@@ -4,6 +4,11 @@
 #include "BaseNet.h"
 #include "Message.h"
 #include "Publisher.h"
+#include "LoginMessage.h"
+#include "CharacterListMessage.h"
+#include "Configuration.h"
+
+#define SIZE_AUTORIZATION_KEY 14
 
 class BaseNet; //Circular Dependency
 
@@ -16,9 +21,15 @@ public:
 	void deliverToModule(Message* message);
 	void deliverToClient(Message* message);
 	void deliverToCentral(Message* message);
+	void setCentralRequestListener();
+	LoginMessage* requestCentraltoLoginClient(int clientSock);
+	char requestCentralToSendCharacterList(int clientSock, CharacterListMessage* characterListMessage);
 
 private:
 	BaseNet* baseNet;
+	char* requestHostname;
+	int requestPortno;
+	char* requestKey;
 };
 
 #endif
