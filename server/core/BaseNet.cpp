@@ -7,11 +7,13 @@ struct ModuleThreadParam
 {
 	int sock;
 	BaseNet* baseNet;
+	MessageDelivery* messageDelivery;
 };
 
 void *moduleThreadFunction(void* moduleThreadParam)
 {
 	int sock = ((ModuleThreadParam*)moduleThreadParam)->sock;
+	MessageDelivery* msgDelivery = ((ModuleThreadParam*)moduleThreadParam)->messageDelivery;
 	Message* msg = new Message(0,'0', '0', '0', 0);
 	int sizeMsg = sizeof(Message);
 	BaseNet* baseNet = ((ModuleThreadParam*)moduleThreadParam)->baseNet;
@@ -25,7 +27,19 @@ void *moduleThreadFunction(void* moduleThreadParam)
 			return (void*) -1;
 		}
 
-		baseNet->send(msg);
+		switch (msg->getDestination())
+		{
+			case MESSAGE_DESTINATION_CHAT:
+			case MESSAGE_DESTINATION_LOGIN:
+			case MESSAGE_DESTINATION_CREATION:
+			case MESSAGE_DESTINATION_REGION:
+			case MESSAGE_DESTINATION_CENTRAL:
+				msgDelivery->deliverToModule(msg);
+			break;
+			default:
+				baseNet->send(msg);
+		}
+		
 	}
 }
 
@@ -157,19 +171,16 @@ void* requestThreadFunction(void* param)
 	sock = (int) param;
 
 	msg = new Message(0, 0, 0, 0, 0);
-	std::cout << "DEBUG 0 requestThreadFunction" << std::endl;
+
 	recv(sock, msg, sizeof(Message), 0);
-	std::cout << "DEBUG 1 requestThreadFunction" << std::endl;
+
 	if(msg->getDestination() == MESSAGE_DESTINATION_CENTRAL)
 	{
 		switch(msg->getOption())
 		{
 			case MESSAGE_OPTIONS_CENTRAL_LOGIN:
-				std::cout << "DEBUG 2 requestThreadFunction" << std::endl;
 				recv(msg->getClientSocket(), loginBuffer, sizeof(char)*60, 0);
-					std::cout << "DEBUG 3 requestThreadFunction" << std::endl;
 				write(sock, loginBuffer, sizeof(char)*60);
-					std::cout << "DEBUG 4 requestThreadFunction" << std::endl;
 			break;
 			case MESSAGE_OPTIONS_CENTRAL_CHARACTERLIST:
 				recv(sock, avatarBuffer, sizeof(Avatar)*10, 0);
@@ -223,24 +234,22 @@ void* requestListenerThreadFunction(void* param)
 		clilen = sizeof(cli_addr);
 		newsock = accept(sock, 
 			(struct sockaddr *) &cli_addr, &clilen);
-	std::cout << "DEBUG 0 requestListenerThreadFunction" << std::endl;
+
 		if (newsock < 0)
 		{
 			std::cout << "ERROR on accept at request listener thread." << std::endl;
 			continue;
 		}
-	std::cout << "DEBUG 1 requestListenerThreadFunction" << std::endl;
+
 		n = recv(newsock, buffer, SIZE_AUTORIZATION_KEY, 0);
-			std::cout << "DEBUG 1 request thread creator" << std::endl;
-	std::cout << "DEBUG 2 requestListenerThreadFunction" << std::endl;
+
 	  	if(!n)
 	    	continue;
-	std::cout << "DEBUG 3 requestListenerThreadFunction, originalkey: " << ((RequestListenerParam*)param)->requestKey << "buffer key: " << buffer << std::endl;
+
 		if(((RequestListenerParam*)param)->checkKey(((RequestListenerParam*)param)->requestKey, buffer))
 		{
 			newThread = new pthread_t();
 
-	std::cout << "DEBUG 4 requestListenerThreadFunction" << std::endl;
 	  		pthread_create(newThread, NULL, requestThreadFunction, (void*) newsock);
 	  	}
 	}
@@ -304,7 +313,7 @@ void BaseNet::run(MessageDelivery* messageDelivery)
     std::cout << "SERVER SHUTDOWN" << std::endl;
 }
 
-int BaseNet::connectModule(int portno, const char* moduleHostname, char* authorizationKey)
+int BaseNet::connectModule(MessageDelivery* msgDelivery, int portno, const char* moduleHostname, char* authorizationKey)
 {
 
 	struct hostent *moduleHostnameHostent;
@@ -358,6 +367,7 @@ int BaseNet::connectModule(int portno, const char* moduleHostname, char* authori
 	  	moduleThreadParam = (ModuleThreadParam*) malloc(sizeof(ModuleThreadParam));
 	  	moduleThreadParam->sock = sockModule;
 	  	moduleThreadParam->baseNet = this;
+	  	moduleThreadParam->messageDelivery = msgDelivery;
 
 
 	  	pthread_create(newThread, NULL, moduleThreadFunction, (void*) moduleThreadParam);
@@ -440,9 +450,10 @@ LoginMessage* BaseNet::requestCentraltoLoginClient(int requestSocket)
 {
 	char buff[60];
 
-	std::cout << "DEBUG 0 requestCentraltoLoginClient" << std::endl;
 	recv(requestSocket, buff, sizeof(char)*60, 0);
-	std::cout << "DEBUG 1 requestCentraltoLoginClient" << std::endl;
+
+	close(requestSocket);
+
 	return new LoginMessage(buff, buff+30);
 }
 
@@ -452,6 +463,8 @@ char BaseNet::requestCentralToSendCharacterList(Avatar* avatarList, int requestS
 
 	write(requestSocket, avatarList, sizeof(Avatar)*10);
 	recv(requestSocket, &avatarNumberChosen, sizeof(char), 0);
+
+	close(requestSocket);
 
 	return avatarNumberChosen;
 }

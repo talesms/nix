@@ -79,7 +79,7 @@ void *newClientThreadFunction(void* threadParam)
 {
 	int sock = ((struct ThreadParam*)threadParam)->sock;
 	char buffer[sizeof(Message)];
-	Message* message = new Message(sock, '0', '0', '0', 1);
+	Message* message = new Message(sock, MESSAGE_DESTINATION_CACHE, MESSAGE_OPTIONS_CACHE_LOGIN, '0', 1);
 	MessageDelivery* messageDelivery;
 	int cacheSock;
 	int n = 0;
@@ -87,8 +87,7 @@ void *newClientThreadFunction(void* threadParam)
 	LoginMessage* loginMessage;
 	CharacterListMessage* characterListMessage = (CharacterListMessage*) malloc(sizeof(CharacterListMessage));
 	InitPlayers* initPlayers = ((struct ThreadParam*)threadParam)->initPlayers;
-
-	std::cout << "DEBUG new newClientThreadFunction at InitPlayers, sock:  " <<  sock << std::endl;
+	Message* msgNewConnectionAvatarNpcManager;
 
 	messageDelivery = ((struct ThreadParam*)threadParam)->messageDelivery;
 
@@ -99,18 +98,22 @@ void *newClientThreadFunction(void* threadParam)
 	if (cacheSock <= 0)
 		return (void*) -1;;
 
-	std::cout << "DEBUG 3 cache server" << std::endl;
 	loginMessage = messageDelivery->requestCentraltoLoginClient(sock);
-	std::cout << "DEBUG 4 cache server" << std::endl;
+
+	write(cacheSock, message, sizeof(Message));
 	write(cacheSock, loginMessage, sizeof(LoginMessage));
-	std::cout << "DEBUG 5 cache server,  user: "<< loginMessage->getUsername() << ", pass: " << loginMessage->getPassword() << std::endl;
 	n = recv(cacheSock, characterListMessage, sizeof(CharacterListMessage), 0);
-	std::cout << "DEBUG 5.5 cache server, n: " << n << std::endl;
+
 	if (n <= 0)
-		return (void*) -1;;
-	std::cout << "DEBUG 6 cache server" << std::endl;
+		return (void*) -1;
+
 	avatarNumberChosen = messageDelivery->requestCentralToSendCharacterList(sock, characterListMessage);
-	std::cout << "DEBUG 7 cache server" << std::endl;
+
+	msgNewConnectionAvatarNpcManager = new Message(sock, MESSAGE_DESTINATION_REGION, MESSAGE_OPTIONS_REGION_AVATAR_NPC_MANAGER, 
+		MESSAGE_FUNCTION_AVATARNPCMANAGER_NEW_CONNECTION, characterListMessage->getCharacter(avatarNumberChosen).idavatar);
+
+	messageDelivery->deliverToCentral(msgNewConnectionAvatarNpcManager);
+
 	std::cout << "Proximo passo eh enviar " <<  characterListMessage->getCharacter(avatarNumberChosen).name << " para o AvatarNpcManager (InitPlayers.cpp-newClientThreadFunction)." << std::endl;
 
 	//*/ PAREI AQUI

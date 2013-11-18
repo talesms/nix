@@ -185,29 +185,52 @@ void *dbAccessThreadFunction(void* dbAccessThreadParam)
 	CharacterListMessage* avatarList = new CharacterListMessage(avatars, 0);
 	int userid = 0;
 	vector<Avatar*>* vectorAvatarList;
+	Message* msg = new Message(0, '0', '0', '0', 0);
+	Avatar* avatar;
+	int avatarid;
+	int i=0;
 
-
-	if(recv(sock, loginMsg, sizeof(LoginMessage), 0) <= 0)
+	if(recv(sock, msg, sizeof(Message), 0) <= 0)
 	{
 		std::cout << "ERROR requester went offline" << std::endl;
 		return (void*) -1;
 	}
 
-	userid = database->login(loginMsg->getUsername(), loginMsg->getPassword());
-
-	if(userid <= 0)
+	switch(msg->getOption())
 	{
-		return (void*) -1;
+		case MESSAGE_OPTIONS_CACHE_LOGIN:
+
+			if(recv(sock, loginMsg, sizeof(LoginMessage), 0) <= 0)
+			{
+				std::cout << "ERROR requester went offline" << std::endl;
+				return (void*) -1;
+			}
+
+			userid = database->login(loginMsg->getUsername(), loginMsg->getPassword());
+
+			if(userid <= 0)
+			{
+				return (void*) -1;
+			}
+			std::cout << "SUCCESS " << loginMsg->getUsername() << " has come online." << std::endl;
+
+			vectorAvatarList = database->getCharacterList(userid);
+
+			for(std::vector<Avatar*>::iterator it = vectorAvatarList->begin(); it != vectorAvatarList->end(); ++it, ++i)
+				avatarList->getCharacterList()[i] = **it;
+
+			send(sock, avatarList, sizeof(CharacterListMessage), 0);
+
+		break;
+		case MESSAGE_OPTIONS_CACHE_AVATAR_SEARCH:
+
+			avatar = database->getCharacter(msg->getValue());
+
+			send(sock, avatar, sizeof(Avatar), 0);
+
+		break;
 	}
-	std::cout << "SUCCESS " << loginMsg->getUsername() << " has come online." << std::endl;
 
-	vectorAvatarList = database->getCharacterList(userid);
-
-	int i=0;
-	for(std::vector<Avatar*>::iterator it = vectorAvatarList->begin(); it != vectorAvatarList->end(); ++it, ++i)
-		avatarList->getCharacterList()[i] = **it;
-
-	send(sock, avatarList, sizeof(CharacterListMessage), 0);
 }
 
 bool CacheManager::checkKey(const char* originalKey, char* key)

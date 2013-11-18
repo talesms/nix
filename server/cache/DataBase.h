@@ -22,6 +22,7 @@ public:
 	vector<Avatar*>* getCharacterList(int userid);
 	vector<Item*>* getItemList();
 	vector<Skill*>* getSkillList();
+	Avatar* getCharacter(int avatarid);
 	bool saveCharacter(Avatar* avatar);
 
 private:

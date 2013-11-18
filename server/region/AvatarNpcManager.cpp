@@ -7,23 +7,22 @@ struct ThreadParam
 	int sock;
 	MessageDelivery* messageDelivery;
 	int cacheSock;
-	//AvatarInfo* info;
+	int avatarId;
 };
 #endif
 
 void *clientThreadFunction(void* threadParam)
 {
 	int sock = ((struct ThreadParam*)threadParam)->sock;
+	int avatarId = ((struct ThreadParam*)threadParam)->avatarId;
 	char buffer[sizeof(Message)];
 	int pkgSize;
-	Message* message = new Message(sock, '0', '0', '0', 1);
+	Message* message = new Message(sock, MESSAGE_DESTINATION_CACHE, MESSAGE_OPTIONS_CACHE_AVATAR_SEARCH, '0', avatarId);
 	MessageDelivery* messageDelivery;
 	int cacheSock = ((struct ThreadParam*)threadParam)->cacheSock;
-	//*/LoginMessage* loginMessage;
-	//*/Avatar* avatarList;
-	//AvatarInfo* localAvatarInfo = ((struct ThreadParam*)threadParam)->info;
-	std::cout << "Iniciando thread clientThreadFunction para o sock "<< sock << "." << std::endl;
+	Avatar* avatar =  (Avatar*) malloc(sizeof(Avatar));;
 
+	std::cout << "Iniciando thread clientThreadFunction para o sock "<< sock << ", avatarid: " << avatarId << "." << std::endl;
 
 	messageDelivery = ((struct ThreadParam*)threadParam)->messageDelivery;
 
@@ -31,6 +30,10 @@ void *clientThreadFunction(void* threadParam)
 
 	pkgSize = sizeof(Message);
 
+	write(cacheSock, message, sizeof(Message));
+	read(cacheSock, avatar, sizeof(Avatar));
+
+	std::cout << "SUCCESS o "<< avatar->name << " foi carregado com sucesso." << std::endl;
 
 	//*/loginMessage = messageDelivery->requestCentraltoLoginClient(sock);
 
@@ -83,9 +86,10 @@ AvatarNpcManager::~AvatarNpcManager()
 {
 }
 
-void AvatarNpcManager::connectToCacheServer()
+int AvatarNpcManager::connectToCacheServer()
 {
 	int portno;
+	int cacheSock;
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
@@ -97,7 +101,7 @@ void AvatarNpcManager::connectToCacheServer()
     if (server == NULL)
     {
         std::cout << "ERROR, no such host to connect with cache server" << std::endl;
-        return;
+        return 0;
     }
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -111,6 +115,8 @@ void AvatarNpcManager::connectToCacheServer()
     	std::cout << "SUCCESS connected to cache server" << std::endl;
 
     write(cacheSock, Configuration::getConfig("cache_manager_key").c_str(), SIZE_AUTORIZATION_KEY);
+
+    return cacheSock;
 }
 
 void AvatarNpcManager::update(Message* message)
@@ -118,7 +124,7 @@ void AvatarNpcManager::update(Message* message)
 	switch(message->getFunction())
 	{
 		case MESSAGE_FUNCTION_AVATARNPCMANAGER_NEW_CONNECTION:
-		newConnection(message);
+			newConnection(message);
 		break;
 	}
 }
@@ -139,7 +145,8 @@ void AvatarNpcManager::newConnection(Message* message)
 
 	threadParam->sock = sock;
 	threadParam->messageDelivery = messageDelivery;
-	threadParam->cacheSock = cacheSock;
+	threadParam->cacheSock = connectToCacheServer();
+	threadParam->avatarId = message->getValue();
 	//threadParam->info = avatarInfo[sock];
 
 	std::cout << "SUCCESS a player has connected, sock: "<<  sock << std::endl;

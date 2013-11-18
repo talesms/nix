@@ -7,6 +7,7 @@
 #include "../core/MessageConfig.h"
 #include "../core/LoginMessage.h"
 #include "../core/CharacterListMessage.h"
+#include "../core/Message.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>

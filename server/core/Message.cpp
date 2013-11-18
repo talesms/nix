@@ -5,6 +5,10 @@ Message::Message(int clientSocket, char destination, char option, char function,
 {
 }
 
+Message::~Message()
+{
+}
+
 int Message::getClientSocket()
 {
 	return clientSocket;

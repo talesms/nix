@@ -33,7 +33,7 @@ public:
 	void run(MessageDelivery* messageDelivery);
 	void listenCentral(MessageDelivery* messageDelivery);
 	void send(Message* message);
-	int connectModule(int portno, const char* moduleHostname, char* authorizationKey);
+	int connectModule(MessageDelivery* msgDelivery, int portno, const char* moduleHostname, char* authorizationKey);
 	int registerModule(int portno, const char* authorizationKey);
 	void setSock(int sock);
 	void sendToCentral(Message* message);

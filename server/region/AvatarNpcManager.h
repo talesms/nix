@@ -35,10 +35,9 @@ private:
 	pthread_t* connections[MAX_CONNECTIONS]; //TODO: criar funcao hash para mapear o socket dentro do size
 	//AvatarInfo* avatarInfo[MAX_CONNECTIONS];
 	MessageDelivery* messageDelivery;
-	int cacheSock;
 
 	void newConnection(Message* message);
-	void connectToCacheServer();
+	int connectToCacheServer();
 };
 
 #endif

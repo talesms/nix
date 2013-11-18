@@ -43,7 +43,7 @@ int DataBase::login(string user, string password)
 vector<Avatar*>* DataBase::getCharacterList(int userid)
 {
 	Avatar* avatar;
-	char* id;
+	char id[10];
 
 	sprintf(id, "%d", userid);
 
@@ -78,6 +78,42 @@ vector<Avatar*>* DataBase::getCharacterList(int userid)
 		} 
 	}
 	return list;
+}
+
+Avatar* DataBase::getCharacter(int avatarid)
+{
+	Avatar* avatar;
+	char id[10];
+
+	sprintf(id, "%d", avatarid);
+
+	mysqlpp::Query query = conn->query("SELECT * FROM avatar WHERE idavatar=" 
+		+ string(id));
+
+	if(mysqlpp::StoreQueryResult result = query.store())
+	{
+		it = result.begin();
+		mysqlpp::Row row = *it;
+		avatar = (Avatar*) malloc(sizeof(Avatar));
+		avatar->idavatar = atoi(row[0]);
+		sprintf(avatar->name, "%s", row[1].c_str());
+		avatar->level = atoi(row[2]);
+		avatar->race = atoi(row[3]);
+		avatar->classNum = atoi(row[4]);
+		avatar->sex = row[5].c_str()[0];
+		avatar->maxhp = atoi(row[6]);
+		avatar->hp = atoi(row[7]);
+		avatar->maxmana = atoi(row[8]);
+		avatar->mana = atoi(row[9]);
+		avatar->positionx = atoi(row[10]);
+		avatar->positiony = atoi(row[11]);
+		avatar->positionz = atoi(row[12]);
+		avatar->rotationx = atoi(row[13]);
+		avatar->rotationy = atoi(row[14]);
+		avatar->rotationz = atoi(row[15]);
+	}
+
+	return avatar;
 }
 
 vector<Item*>* DataBase::getItemList()
