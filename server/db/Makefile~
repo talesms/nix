@@ -1,8 +1,0 @@
-compile:
-	g++ db.cpp DataBase.h DataBase.cpp ../core/Configuration.h ../core/Configuration.cpp -L/user/lib -lmysqlpp -I/usr/include/mysql -I/usr/include/mysql++ -MMD -MP -MF -o db
-
-clean:
-	rm db
-
-# core/MessageDelivery.h core/MessageDelivery.cpp
-#core/Publisher.h core/Publisher.cpp core/Subscriber.h core/Subscriber.cpplibmysqlcppconn-static

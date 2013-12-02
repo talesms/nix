@@ -113,8 +113,4 @@ void *newClientThreadFunction(void* threadParam)
 		MESSAGE_FUNCTION_AVATARNPCMANAGER_NEW_CONNECTION, characterListMessage->getCharacter(avatarNumberChosen).idavatar);
 
 	messageDelivery->deliverToCentral(msgNewConnectionAvatarNpcManager);
-
-	std::cout << "Proximo passo eh enviar " <<  characterListMessage->getCharacter(avatarNumberChosen).name << " para o AvatarNpcManager (InitPlayers.cpp-newClientThreadFunction)." << std::endl;
-
-	//*/ PAREI AQUI
 }

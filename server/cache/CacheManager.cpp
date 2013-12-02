@@ -121,6 +121,11 @@ void *dbCachedInfoThreadFunction(void* dbCachedInfoThreadParam)
 	itemList = ((DbCachedInfoThreadParam*)dbCachedInfoThreadParam)->database->getItemList();
 	skillList = ((DbCachedInfoThreadParam*)dbCachedInfoThreadParam)->database->getSkillList();
 
+	if(itemList->size() > 0 && skillList->size() > 0)
+		std::cout << "SUCCESS cached informations from database." << std::endl;
+	else
+		std::cout << "ERROR during cache operation from database." << std::endl;
+
 	dbCachedInfo = (DbCachedInfo*) malloc(sizeof(DbCachedInfo));
 
 	portno = atoi(Configuration::getConfig("cache_manager_cached_port").c_str());

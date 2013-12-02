@@ -11,68 +11,48 @@ struct ThreadParam
 };
 #endif
 
-void *clientThreadFunction(void* threadParam)
+Avatar* loadAvatarFromDatabase(int sock, int avatarId, int cacheSock)
 {
-	int sock = ((struct ThreadParam*)threadParam)->sock;
-	int avatarId = ((struct ThreadParam*)threadParam)->avatarId;
-	char buffer[sizeof(Message)];
-	int pkgSize;
+	Avatar* avatar =  (Avatar*) malloc(sizeof(Avatar));
 	Message* message = new Message(sock, MESSAGE_DESTINATION_CACHE, MESSAGE_OPTIONS_CACHE_AVATAR_SEARCH, '0', avatarId);
-	MessageDelivery* messageDelivery;
-	int cacheSock = ((struct ThreadParam*)threadParam)->cacheSock;
-	Avatar* avatar =  (Avatar*) malloc(sizeof(Avatar));;
-
-	std::cout << "Iniciando thread clientThreadFunction para o sock "<< sock << ", avatarid: " << avatarId << "." << std::endl;
-
-	messageDelivery = ((struct ThreadParam*)threadParam)->messageDelivery;
-
-	delete ((struct ThreadParam*) threadParam);
-
-	pkgSize = sizeof(Message);
 
 	write(cacheSock, message, sizeof(Message));
 	read(cacheSock, avatar, sizeof(Avatar));
 
-	std::cout << "SUCCESS o "<< avatar->name << " foi carregado com sucesso." << std::endl;
+	return avatar;
+}
 
-	//*/loginMessage = messageDelivery->requestCentraltoLoginClient(sock);
+Message* customAvatarTick(Avatar* avatar)
+{
+	//Your implementation goes here
 
-	//s*/messageDelivery->requestCentralToSendCharacterList(sock, avatarList);
+	return NULL;
+}
 
-	//if(!messageDelivery->loginStep(sock))
-	//	return;
+void *clientThreadFunction(void* threadParam)
+{
+	int sock = ((struct ThreadParam*)threadParam)->sock;
+	int avatarId = ((struct ThreadParam*)threadParam)->avatarId;
+	Message* message;
+	MessageDelivery* messageDelivery = ((struct ThreadParam*)threadParam)->messageDelivery;
+	int cacheSock = ((struct ThreadParam*)threadParam)->cacheSock;
+	Avatar* avatar;
 
-	//messageDelivery->characterListStep(sock);
+	delete ((struct ThreadParam*) threadParam);
 
-	/*localAvatarInfo->maxHp = 100;
-	localAvatarInfo->hp = 100;
-	localAvatarInfo->maxMana = 100;
-	localAvatarInfo->mana = 100;
+	avatar = loadAvatarFromDatabase(sock, avatarId, cacheSock);
 
-	localAvatarInfo->posX = 0;
-	localAvatarInfo->posY = 0;
-	localAvatarInfo->posZ = 0;
-
-	localAvatarInfo->rotX = 0;
-	localAvatarInfo->rotY = 0;
-	localAvatarInfo->rotZ = 0;
-
-	localAvatarInfo->vel = 10;*/
+	if(avatar != NULL)
+		std::cout << "SUCCESS the "<< avatar->name << " was loaded successfully." << std::endl;
+	else
+		std::cout << "ERROR avatar not found in database." << std::endl;
 
 	while(true)
 	{
-		sleep(3);
+		message = customAvatarTick(avatar);
 
-		messageDelivery->deliverToCentral(message);
-
-		//if(sizeRecv <= 0)
-		//{
-		//	std::cout << "Client " << sock << " Disconnected." << std::endl;
-		//	close(sock);
-		//	pthread_exit(0);
-		//}
-
-		//TODO: free localAvatarInfo, threadParams, message
+		if(message != NULL)
+			messageDelivery->deliverToCentral(message);
 	}
 }
 
@@ -141,13 +121,10 @@ void AvatarNpcManager::newConnection(Message* message)
 
 	connections[sock] = newThread;
 
-	//avatarInfo[sock] = (struct AvatarInfo*) malloc(sizeof(struct AvatarInfo));
-
 	threadParam->sock = sock;
 	threadParam->messageDelivery = messageDelivery;
 	threadParam->cacheSock = connectToCacheServer();
 	threadParam->avatarId = message->getValue();
-	//threadParam->info = avatarInfo[sock];
 
 	std::cout << "SUCCESS a player has connected, sock: "<<  sock << std::endl;
 
